@@ -3,6 +3,9 @@ package com.katiearose.sobriety
 import com.katiearose.sobriety.internal.CircularBuffer
 import com.katiearose.sobriety.utils.putLast
 import com.katiearose.sobriety.utils.secondsFromNow
+import com.katiearose.sobriety.utils.toJSONObject
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.Serializable
 import java.time.Instant
 import java.time.LocalDate
@@ -54,6 +57,63 @@ class Addiction(
 
     private fun calculateAverageRelapseDuration(): Long {
         return relapses.getAll().filterNotNull().sumOf { it } / 3L
+    }
+
+    fun toJSON(): JSONObject {
+        val addictionJSON: JSONObject = JSONObject();
+        addictionJSON.put("name", name)
+
+        val lastRelapseJSON = JSONObject()
+        lastRelapseJSON.put("epochSeconds", lastRelapse.epochSecond)
+        lastRelapseJSON.put("nanosecondsOfSecond", lastRelapse.nano)
+        addictionJSON.put("last_relapse", lastRelapseJSON)
+
+
+        addictionJSON.put("is_stopped", isStopped)
+        addictionJSON.put("time_stopped", timeStopped)
+        addictionJSON.put("history", history.toJSONObject())
+        addictionJSON.put("priority", priority.ordinal)
+        addictionJSON.put("daily_notes", dailyNotes.toJSONObject())
+        addictionJSON.put("time_saving", timeSaving.toString())
+        addictionJSON.put("savings", savings.toJSONObject(process_value = { pair ->
+            val json = JSONObject()
+            json.put("first", pair.first)
+            json.put("second", pair.second)
+            json
+        }))
+
+        val milestonesJSON = JSONArray()
+        for (pair in milestones) {
+            val json = JSONObject()
+            json.put("first", pair.first)
+            milestonesJSON.put(milestonesJSON.length(), json)
+            json.put("second", when (pair.second) {
+                ChronoUnit.HOURS -> JSONObject()
+                    .put("type", "TimeBased")
+                    .put("nanoseconds", 3600000000000)
+                ChronoUnit.DAYS -> JSONObject()
+                    .put("type", "DayBased")
+                    .put("days", 1)
+                ChronoUnit.WEEKS -> JSONObject()
+                    .put("type", "DayBased")
+                    .put("days", 7)
+                ChronoUnit.MONTHS -> JSONObject()
+                    .put("type", "MonthBased")
+                    .put("months", 1)
+                ChronoUnit.YEARS -> JSONObject()
+                    .put("type", "MonthBased")
+                    .put("months", 12)
+                else -> JSONObject()
+            })
+        }
+        addictionJSON.put("milestones", milestonesJSON)
+
+        val relapsesJSON = JSONObject()
+        val relapsesList = relapses.getAll()
+        relapsesJSON.put("size", relapsesList.size)
+        relapsesJSON.put("buffer", JSONArray(relapsesList))
+        addictionJSON.put("relapses", relapsesJSON)
+        return addictionJSON
     }
 
     fun toCacheable(): HashMap<Int, Any> {

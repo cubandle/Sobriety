@@ -8,6 +8,8 @@ import androidx.appcompat.widget.AppCompatEditText
 import androidx.preference.PreferenceManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.katiearose.sobriety.R
+import org.json.JSONArray
+import org.json.JSONObject
 import java.time.Instant
 
 private const val MINUTE = 60
@@ -85,3 +87,22 @@ fun <K, V> LinkedHashMap<K, V>.putLast(value: V) {
     val lastKey = keys.map { it }.last()
     put(lastKey, value)
 }
+
+/**
+ * Returns JSONObject with keys and values keys as JSONArray
+ * This is because JSONObjects do not have guaranteed order
+ * process_value is an optional functions to convert val to a JSONObject
+ */
+fun <K, V> Map<K, V>.toJSONObject(
+    process_value: ((V) -> JSONObject)? = null
+): JSONObject {
+    val json = JSONObject()
+    for ((k, v) in this) {
+        json.put(k.toString(),
+            if (process_value != null) {
+                process_value(v)
+            } else v)
+    }
+    return json
+}
+

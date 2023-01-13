@@ -1,13 +1,19 @@
 package com.katiearose.sobriety.activities
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.ListPreference
+import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import com.katiearose.sobriety.R
 import com.katiearose.sobriety.utils.applyThemes
+import com.katiearose.sobriety.utils.exportData
 
 class Settings : AppCompatActivity() {
 
@@ -40,6 +46,17 @@ class Settings : AppCompatActivity() {
                 requireActivity().recreate()
                 true
             }
+
+            val getExport = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri: Uri? ->
+                if (uri != null) {
+                    context?.exportData(uri)
+                }
+            }
+            findPreference<Preference>("data_export")?.setOnPreferenceClickListener {
+                getExport.launch("sobriety_data.json")
+                true
+            }
+
         }
     }
 }
